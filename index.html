@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>Dilobar</title>
+
+  <!-- Elegant fonts (system serif / sans fallbacks are used if offline) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Jost:wght@200;300&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <main id="stage" class="stage" aria-label="Cinematic animation">
+
+    <!-- Layer 1: faint ambient light for the final scene -->
+    <div id="ambient" class="ambient" aria-hidden="true"></div>
+
+    <!-- Layer 2: thin white geometric lines (generated in script.js) -->
+    <svg id="lines" class="lines" preserveAspectRatio="none" aria-hidden="true"></svg>
+
+    <!-- Layer 3: the eye. Zoom is driven by JS (CSS transform + viewBox) -->
+    <div id="camera" class="camera" aria-hidden="true">
+      <svg id="eye" class="eye" viewBox="0 0 400 240" preserveAspectRatio="none">
+        <defs>
+          <!-- The eyelids open/close by redrawing this clip shape from JS -->
+          <clipPath id="eyeClip">
+            <path id="clipShape" d="M20 120 Q200 120 380 120 Q200 120 20 120Z"/>
+          </clipPath>
+
+          <radialGradient id="irisFill" cx="50%" cy="50%" r="50%">
+            <stop offset="35%"  stop-color="#fff" stop-opacity="0.02"/>
+            <stop offset="85%"  stop-color="#fff" stop-opacity="0.16"/>
+            <stop offset="100%" stop-color="#fff" stop-opacity="0.30"/>
+          </radialGradient>
+
+          <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stop-color="#fff" stop-opacity="0.07"/>
+            <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+
+        <!-- soft halo behind the eye -->
+        <circle cx="200" cy="120" r="230" fill="url(#halo)" stroke="none"/>
+
+        <!-- very faint "sclera" -->
+        <path id="eyeFill" class="eye-fill" d="M20 120 Q200 120 380 120 Q200 120 20 120Z"/>
+
+        <!-- everything inside the lids -->
+        <g id="eyeInner" clip-path="url(#eyeClip)">
+          <g id="iris">
+            <circle cx="200" cy="120" r="56" fill="url(#irisFill)" stroke="none"/>
+            <g id="fibers"></g>
+            <circle class="ln lim draw" style="--d:1.0s" cx="200" cy="120" r="56" pathLength="1"/>
+            <circle class="thin draw faint" style="--d:1.2s" cx="200" cy="120" r="47" pathLength="1"/>
+            <circle class="thin draw" style="--d:1.3s" cx="200" cy="120" r="31" pathLength="1"/>
+            <g id="pupil">
+              <circle class="ln draw" style="--d:1.4s" cx="200" cy="120" r="22" pathLength="1" fill="#000"/>
+            </g>
+          </g>
+          <!-- light reflections (move slightly less than the iris) -->
+          <g id="shine" class="shine">
+            <circle cx="184" cy="106" r="5.5" fill="#fff" stroke="none" opacity="0.92"/>
+            <circle cx="214" cy="132" r="2.2" fill="#fff" stroke="none" opacity="0.6"/>
+          </g>
+          <!-- inner corner detail -->
+          <ellipse class="thin faint" cx="36" cy="121" rx="8" ry="3.6"/>
+        </g>
+
+        <!-- eyelids, crease and lashes -->
+        <path id="lidLower" class="ln lid draw" style="--d:0.15s" pathLength="1" d="M20 120 Q200 120 380 120"/>
+        <path id="lidUpper" class="ln lid draw" style="--d:0s"    pathLength="1" d="M20 120 Q200 120 380 120"/>
+        <path id="crease"   class="thin draw faint" style="--d:0.8s" pathLength="1" d="M48 112 Q200 120 352 112"/>
+        <g id="lashes" class="lashes"></g>
+      </svg>
+    </div>
+
+    <!-- Layer 4: soft heartbeat glow in the pupil -->
+    <div id="glow" class="glow" aria-hidden="true"></div>
+
+    <!-- Layer 5: hearts (single canvas, sprite based) -->
+    <canvas id="hearts" class="hearts" aria-hidden="true"></canvas>
+
+    <!-- Layer 6: tiny frame corners -->
+    <div class="corner tl" aria-hidden="true"></div>
+    <div class="corner tr" aria-hidden="true"></div>
+    <div class="corner bl" aria-hidden="true"></div>
+    <div class="corner br" aria-hidden="true"></div>
+
+    <!-- Layer 7: final scene -->
+    <section id="final" class="final">
+      <div id="finalInner" class="final-inner">
+        <span class="rule rule-top" aria-hidden="true"></span>
+        <h1 id="name" class="name">Dilobar</h1>
+        <p id="tagline" class="tagline">You are special. <span class="tag-heart">&#9825;</span></p>
+        <span class="rule rule-bottom" aria-hidden="true"></span>
+      </div>
+    </section>
+
+    <button id="replay" class="replay" type="button">Replay</button>
+  </main>
+
+  <script src="script.js" defer></script>
+</body>
+</html>

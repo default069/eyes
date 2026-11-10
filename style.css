@@ -1,0 +1,291 @@
+/* ==========================================================================
+   Dilobar — cinematic eye intro
+   Dark minimalism · cinematic · romantic
+   ========================================================================== */
+
+/* ---------- Tokens ---------- */
+:root {
+  --bg: #000;
+  --line: #fff;
+  --soft: rgba(255, 255, 255, 0.6);
+  --rose: #ff8fa3;
+  --inset: clamp(14px, 3vw, 32px);
+  --font-display: 'Cormorant Garamond', 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-ui: 'Jost', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ---------- Reset / base ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  overflow: hidden;            /* no scrollbars, ever */
+  overscroll-behavior: none;
+}
+
+body {
+  color: #fff;
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---------- Stage & layers ---------- */
+.stage {
+  position: fixed;             /* fixed + inset avoids 100vh bugs on mobile browsers */
+  inset: 0;
+  overflow: hidden;
+  background: var(--bg);
+  isolation: isolate;
+}
+.stage > * { position: absolute; }
+
+/* While the scene resets, kill all transitions/animations for one frame */
+.stage.resetting, .stage.resetting * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* ---------- Ambient light (final scene) ---------- */
+.ambient {
+  z-index: 1;
+  left: 50%; top: 50%;
+  width: 120vmax; height: 120vmax;
+  margin: -60vmax 0 0 -60vmax;
+  background: radial-gradient(closest-side, rgba(255, 70, 110, 0.10), rgba(255, 70, 110, 0) 70%);
+  opacity: 0;
+  transition: opacity 3s ease;
+  pointer-events: none;
+}
+.ambient.on {
+  opacity: 1;
+  animation: breathe 9s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(0.88); }
+  50%      { transform: scale(1.05); }
+}
+
+/* ---------- Background lines ---------- */
+.lines {
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.55));   /* gentle glow */
+  transition: opacity 1.8s ease;
+  pointer-events: none;
+}
+.lines path {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: var(--lw, 1);                 /* set from JS so lines stay ~1px */
+  stroke-dasharray: 1 2;                      /* pathLength = 1 => draw-on effect */
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset var(--dur, 1.8s) cubic-bezier(0.5, 0, 0.15, 1) var(--d, 0s);
+}
+.lines.on path { stroke-dashoffset: 0; }
+.lines.out { opacity: 0; }
+
+/* ---------- Camera + eye ---------- */
+.camera {
+  z-index: 3;
+  inset: 0;
+  transform-origin: 50% 50%;
+  transition: opacity 1.2s ease;
+  pointer-events: none;
+}
+.camera.hide { opacity: 0; transition: opacity 0.9s ease; }
+
+.eye {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  fill: none;
+  stroke: var(--line);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  shape-rendering: geometricPrecision;
+}
+/* --sw is set from JS so strokes stay elegant while zooming in */
+.eye .ln   { stroke-width: calc(1.5px * var(--sw, 1)); }
+.eye .lim  { stroke-width: calc(2.2px * var(--sw, 1)); }
+.eye .thin { stroke-width: calc(0.7px * var(--sw, 1)); }
+.eye .faint { stroke-opacity: 0.45; }
+.eye .eye-fill { fill: rgba(255, 255, 255, 0.035); stroke: none; }
+
+/* draw-on animation for outlines (pathLength = 1) */
+.eye .draw {
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: 1;
+  stroke-linecap: butt;
+  transition: stroke-dashoffset 2.2s cubic-bezier(0.65, 0, 0.35, 1) var(--d, 0s);
+}
+.eye.drawn .draw { stroke-dashoffset: 0; }
+
+.eye .lashes line { stroke-width: calc(0.9px * var(--sw, 1)); }
+.eye .lashes { opacity: 0; transition: opacity 1.6s ease 1.2s; }
+.eye.drawn .lashes { opacity: 1; }
+
+/* ---------- Heartbeat glow in the pupil ---------- */
+.glow {
+  z-index: 4;
+  left: 50%; top: 50%;
+  width: min(70vmin, 520px);
+  height: min(70vmin, 520px);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 90, 120, 0.55), rgba(255, 90, 120, 0) 65%);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.1);
+  pointer-events: none;
+}
+.glow.beat { animation: heartbeat 2.8s ease-out forwards; }
+@keyframes heartbeat {
+  0%   { opacity: 0;    transform: translate(-50%, -50%) scale(0.1); }
+  18%  { opacity: 0.95; transform: translate(-50%, -50%) scale(0.5); }
+  30%  { opacity: 0.6;  transform: translate(-50%, -50%) scale(0.36); }
+  46%  { opacity: 1;    transform: translate(-50%, -50%) scale(0.8); }
+  100% { opacity: 0;    transform: translate(-50%, -50%) scale(1.7); }
+}
+
+/* ---------- Hearts canvas ---------- */
+.hearts {
+  z-index: 5;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ---------- Frame corners ---------- */
+.corner {
+  z-index: 6;
+  width: clamp(16px, 3.6vw, 34px);
+  height: clamp(16px, 3.6vw, 34px);
+  border: 0 solid rgba(255, 255, 255, 0.4);
+  opacity: 0;
+  transition: opacity 2.4s ease 1s;
+  pointer-events: none;
+}
+.corner.tl { top: calc(var(--inset) + env(safe-area-inset-top, 0px));    left: calc(var(--inset) + env(safe-area-inset-left, 0px));   border-top-width: 1px;    border-left-width: 1px; }
+.corner.tr { top: calc(var(--inset) + env(safe-area-inset-top, 0px));    right: calc(var(--inset) + env(safe-area-inset-right, 0px)); border-top-width: 1px;    border-right-width: 1px; }
+.corner.bl { bottom: calc(var(--inset) + env(safe-area-inset-bottom, 0px)); left: calc(var(--inset) + env(safe-area-inset-left, 0px));   border-bottom-width: 1px; border-left-width: 1px; }
+.corner.br { bottom: calc(var(--inset) + env(safe-area-inset-bottom, 0px)); right: calc(var(--inset) + env(safe-area-inset-right, 0px)); border-bottom-width: 1px; border-right-width: 1px; }
+.stage.finale .corner { opacity: 1; }
+
+/* ---------- Final scene: name + tagline ---------- */
+.final {
+  z-index: 7;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0 5vw;
+  text-align: center;
+  pointer-events: none;
+}
+.final-inner {
+  display: grid;
+  justify-items: center;
+  gap: clamp(0.9rem, 2.6vh, 1.7rem);
+  max-width: 100%;
+}
+
+.rule {
+  display: block;
+  width: clamp(70px, 28vw, 240px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+  opacity: 0;
+  transform: scaleX(0);
+  transition: transform 1.8s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 1.2s ease;
+}
+.rule-top    { transition-delay: 0.1s; }
+.rule-bottom { transition-delay: 2.4s; }
+.final.show .rule { opacity: 1; transform: scaleX(1); }
+
+.name {
+  max-width: 100%;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(2.6rem, 14vw, 7.5rem);   /* never wider than the screen */
+  line-height: 1.05;
+  letter-spacing: 0.14em;
+  padding-left: 0.14em;                     /* re-centre after trailing letter-spacing */
+  text-transform: none;
+  overflow-wrap: anywhere;
+  color: #fff;
+}
+.name span {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.25em) scale(0.96);
+  text-shadow: 0 0 0.35em rgba(255, 255, 255, 0.35), 0 0 1.2em rgba(255, 110, 140, 0.28);
+  transition:
+    opacity 1.9s ease var(--i, 0s),
+    transform 2.3s cubic-bezier(0.2, 0.7, 0.2, 1) var(--i, 0s);
+}
+.final.show .name span { opacity: 1; transform: none; }
+
+.tagline {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: clamp(0.8rem, 2.6vw, 1.05rem);
+  letter-spacing: 0.3em;
+  padding-left: 0.3em;
+  color: rgba(255, 255, 255, 0.72);
+  opacity: 0;
+  transition: opacity 2s ease 1.9s;
+}
+.tagline[hidden] { display: none; }
+.tag-heart { color: var(--rose); }
+.final.show .tagline { opacity: 1; }
+
+/* ---------- Replay button ---------- */
+.replay {
+  z-index: 8;
+  left: 50%;
+  bottom: max(1.4rem, calc(env(safe-area-inset-bottom, 0px) + 0.9rem));
+  transform: translateX(-50%);
+  min-height: 44px;                          /* comfortable tap target */
+  padding: 0.75em 1.9em;
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.72rem;
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 1.4s ease, visibility 0s linear 1.4s, color 0.3s ease, border-color 0.3s ease;
+}
+.stage.done .replay {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 1.4s ease, visibility 0s, color 0.3s ease, border-color 0.3s ease;
+}
+.replay:hover { color: #fff; border-color: rgba(255, 255, 255, 0.65); }
+.replay:focus-visible { outline: 1px solid rgba(255, 255, 255, 0.8); outline-offset: 4px; }
+
+/* ---------- Small screens ---------- */
+@media (max-width: 700px) {
+  .lines { filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5)); }  /* cheaper glow */
+  .name { letter-spacing: 0.1em; padding-left: 0.1em; }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .ambient.on { animation: none; }
+  .name span { transform: none; }
+  .glow.beat { animation-duration: 0.01s; }
+}
